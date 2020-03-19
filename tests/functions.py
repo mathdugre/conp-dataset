@@ -146,7 +146,7 @@ def examine(dataset, project):
 
     # Test those randomly chose files
     responses = []
-    TIMEOUT = 120
+    TIMEOUT = 240
     with timeout(TIMEOUT):
         for file in files:
             full_path = os.path.join(dataset, file)
@@ -161,7 +161,7 @@ def examine(dataset, project):
     if responses == []:
         print(
             f"The dataset timed out after {TIMEOUT} seconds before retrieving a file."
-            + "There is not way to tell if the download would be sucessful."
+            + "There is not way to tell if the download would be successful."
             + file
         )
         return False
