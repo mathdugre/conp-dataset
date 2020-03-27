@@ -72,6 +72,7 @@ if os.getenv("TRAVIS", False):
     pull_number = False if pull_number == "false" else pull_number
 elif os.getenv("CIRCLECI", False):
     pull_number = os.getenv("CIRCLE_PR_NUMBER", False)
+    print(f"CIRCLECI pull request number: {pull_number}")
 else:
     pull_number = False
 
