@@ -149,7 +149,7 @@ def generate_datalad_provider(loris_api):
         os.path.join(
             os.path.expanduser("~"), ".config", "datalad", "providers", "loris.cfg"
         ),
-        "w",
+        "w+",
     ) as fout:
         fout.write(
             f"""[provider:loris]                                                                    
