@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import json
-import traceback
 
 from git import Repo
 from datalad import api
