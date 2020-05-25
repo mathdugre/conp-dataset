@@ -1,0 +1,18 @@
+on:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: Update submodules
+    steps:
+      - name: Update submodules
+        id: update
+        uses: mathdugre/autopr-submodules-updates@v0.1
+        with:
+          owner: "mathdugre"
+          repo: "conp-dataset"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          user: "mathdugre"
+          user_github_token: ${{ secrets.PR_BOT_TEST}}
