@@ -144,7 +144,7 @@ def generate_datalad_provider(loris_api):
     os.makedirs(datalad_provider_path, exist_ok=True)
     with open(
         os.path.join(datalad_provider_path, "loris.cfg"),
-        "w+",
+        "w",
     ) as fout:
         fout.write(
             f"""[provider:loris]
