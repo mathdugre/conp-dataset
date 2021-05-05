@@ -278,7 +278,7 @@ def download_files(dataset, dataset_size, *, num=4):
     )
     # Set a time limit based on the download size.
     # Limit between 20 sec and 10 minutes to avoid test to fail/hang.
-    time_limit = int(max(20, min(download_size * 1.2 // 2e6, 600)))
+    time_limit = int(max(20, min(download_size * 1.2 // 1e6, 600)))
 
     responses = []
     with timeout(time_limit):
