@@ -1,110 +1,41 @@
-version: 2
+version: 2.1
 
-aliases:
-  - &docker
-    - image: mathdugre/ci-conp-dataset:v1
-
-  - &workdir ~/conp-dataset
-
-  - &aggregate_python_requirements
-    run:
-      name: Aggregate Python requirements files
-      command: |
-        touch all_requirements.txt
-        find . -name requirements.txt | grep -v all_requirements.txt | xargs cat >> all_requirements.txt
-        sort -u all_requirements.txt  > requirements.txt
-
-  - &restore_python_cache
-    restore_cache:
-      name: Restore Python Cache
-      keys:
-        - python-deps-{{ checksum "requirements.txt" }}
-        - python-deps-
-
-jobs:
-  build:
-    working_directory: *workdir
-    docker: *docker
-
-    steps:
-      - checkout:
-          path: *workdir
-      - *aggregate_python_requirements
-      - *restore_python_cache
-      - run:
-          name: Install Dependencies
-          command: |
-            python -m venv ~/venv
-            . ~/venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt
-      - save_cache:
-          name: Save Python Cache
-          paths:
-            - ~/venv
-          key: python-deps-{{ checksum "requirements.txt" }}
-      - run:
-          name: Install CONP-DATS Validator
-          command: |
-            . ~/venv/bin/activate
-            export PATH=~/git-annex.linux:$PATH
-            datalad install scripts/dats_validator/conp-dats
-      - persist_to_workspace:
-          root: *workdir
-          paths:
-            - scripts/dats_validator/conp-dats
-
-  test:
-    working_directory: *workdir
-    docker: *docker
-    parallelism: 2
-
-    steps:
-      - checkout:
-          path: *workdir
-      - attach_workspace:
-          at: *workdir
-      - *aggregate_python_requirements
-      - *restore_python_cache
-      - run:
-          name: Run Tests
-          command: |
-            . ~/venv/bin/activate
-            ./lint.sh
-            export PATH=~/git-annex.linux:$PATH
-            python tests/create_tests.py
-            circleci tests glob tests/test_* | circleci tests split > /tmp/tests-to-run
-            PYTHONPATH=$PWD:$PWD/scripts pytest --junitxml=tests/junit.xml -v -rfEs $(cat /tmp/tests-to-run)
-      - store_test_results:
-          path: tests
-      - run:
-          when: always
-          name: Parse Test Results
-          command: |
-            . ~/venv/bin/activate
-            PYTHONPATH=$PWD:$PWD/scripts python tests/parse_results.py
-      - store_artifacts:
-          path: tests/test-status.json
+orbs:
+  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration files
+  # Orb commands and jobs help you with common scripting around a language/tool
+  # so you dont have to copy and paste it everywhere.
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
+  python: circleci/python@1.2
 
 workflows:
-  version: 2
-  commit:
+  sample:  # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run. 
+    # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows 
     jobs:
-      - build
-      - test:
-          requires:
-            - build
+      - build-and-test
 
-  monitoring:
-    triggers:
-      - schedule:
-          cron: "0 0,4,8,12,16,20 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - build
-      - test:
-          requires:
-            - build
+
+jobs:
+  build-and-test:  # This is the name of the job, feel free to change it to better match what you're trying to do!
+    # These next lines defines a Docker executors: https://circleci.com/docs/2.0/executor-types/
+    # You can specify an image from Dockerhub or use one of the convenience images from CircleCI's Developer Hub
+    # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
+    # The executor is the environment in which the steps below will be executed - below will use a python 3.9 container
+    # Change the version below to your required version of python
+    docker:
+      - image: cimg/python:3.8
+    # Checkout the code as the first step. This is a dedicated CircleCI step.
+    # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
+    # Here we're making sure we use just use the system-wide pip. By default it uses the project root's requirements.txt.
+    # Then run your tests!
+    # CircleCI will report the results back to your VCS provider.
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
+          # pip-dependency-file: test-requirements.txt  # if you have a different name for your requirements file, maybe one that combines your runtime and test requirements.
+      - run:
+          name: Run tests
+          # This assumes pytest is installed via the install-package step above
+          command: pytest
